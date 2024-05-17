@@ -5,15 +5,30 @@
 #include "Communication.h"
 #include "Arduino.h"
 
-Communication::Communication(int _rxPin, int _txPin) : SoftwareSerial(_rxPin, _txPin), rxPin(_rxPin), txPin(_txPin) {
 
+Communication::Communication(const HardwareSerial& _serial, long _speed) : serial(_serial), speed(_speed) {
 }
 
-void Communication::begin(long speed) {
-    pinMode(this->rxPin, OUTPUT);
-    pinMode(this->txPin, INPUT);
-
-    SoftwareSerial::begin(speed);
-
+void Communication::begin() {
+    this->serial.begin(speed);
 }
 
+int Communication::received() {
+    return serial.available();
+}
+
+
+template<typename T>
+void Communication::send(T value) {
+    this->serial.write(value);
+}
+
+char Communication::readChar() {
+    if (this->received()) {
+        return static_cast<char>(this->serial.read());
+    } else return '\0';
+}
+
+String Communication::readString() {
+    return this->serial.readString();
+}

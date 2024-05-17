@@ -43,28 +43,8 @@ public:
         RIGHT
     };
 
-    static char encode(Tape::Cell c) {
-        switch (c) {
-            case Tape::BLANK:
-                return 'b';
-            case Tape::ZERO:
-                return '0';
-            case Tape::ONE:
-                return '1';
-        }
-    }
-
-    static char encode(Tape::Direction c) {
-        switch (c) {
-            case Tape::LEFT:
-                return 'l';
-            case Tape::RIGHT:
-                return 'r';
-        }
-    }
-
     Tape() {
-        for (Cell& c : buffer) {
+        for (Cell c : buffer) {
             c = BLANK;
         }
     }
@@ -85,34 +65,21 @@ public:
     }
 
     void write(Cell c) {
-        Serial.println("Write " + String(Tape::encode(c)) + " to pos " + String(head));
         buffer[head] = c;
-        update(head, VIEW_LENGTH / 2 - 1);
+        update(head);
     }
 
     void update() {
-        Serial.println("Visible tape");
-
-        int j = 0;
         for (int i = head - 7; i < head + 8; ++i) {
-            update(i, j);
-            Serial.print(Tape::encode(buffer[i]));
-            ++j;
+            update(i);
         }
-
-        Serial.println("\nTape");
-        for (auto c : buffer) Serial.print(Tape::encode(c));
-        Serial.println();
     }
 
-    void update(int bufferInd, int ledInd) {
-        Serial.println("Set led #" + String(ledInd) + " from pos " + String(bufferInd));
-        Cell& c = buffer[bufferInd];
+    void update(int i) {
+        Cell& c = buffer[i];
 
-        state.set(ledInd, c == ONE);
-        blanks.set(ledInd, c == BLANK);
-
-
+        state.set(i, c == ONE);
+        blanks.set(i, c == BLANK);
     }
 
     bool move(Direction d) {
@@ -125,8 +92,6 @@ public:
 
             ++head;
         }
-
-        Serial.println("Head pos " + String(head));
 
         update();
         return true;
@@ -145,6 +110,25 @@ private:
     Cell buffer[TAPE_LENGTH]{};
 };
 
+char encode(Tape::Cell c) {
+    switch (c) {
+        case Tape::BLANK:
+            return 'b';
+        case Tape::ZERO:
+            return '0';
+        case Tape::ONE:
+            return '1';
+    }
+}
+
+char encode(Tape::Direction c) {
+    switch (c) {
+        case Tape::LEFT:
+            return 'l';
+        case Tape::RIGHT:
+            return 'r';
+    }
+}
 
 Tape tape;
 
@@ -168,22 +152,18 @@ void loop() {
 
     if (Serial1.available()) {
         char c = static_cast<char>(Serial1.read());
-
         Serial.println("Read char " + String(c));
 
         if (c == 'l' || c == 'r') {
-            Serial.println("Direction");
             Tape::Direction d = c == 'r' ? Tape::Direction::RIGHT : Tape::Direction::LEFT;
 
             if (!tape.move(d)) {
                 Serial1.write("er");
             }
         } else if (c == 'q') {
-            Serial.println("Query");
-            String s = "c" + String(Tape::encode(tape.read()));
+            String s = "c" + String(encode(tape.read()));
             Serial1.write(s.c_str()); // ??
         } else if (c == 'w') {
-            Serial.println("Write");
             char m = static_cast<char>(Serial1.read());
 
             switch (m) {
@@ -198,9 +178,9 @@ void loop() {
                     break;
                 default:
                     Serial1.write("ei");
-                    Serial.println("");
             }
         }
+
 
 
         Serial1.write(10);

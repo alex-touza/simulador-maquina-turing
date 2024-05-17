@@ -6,15 +6,25 @@
 #define SIMULADOR_MAQUINA_TURING_COMMUNICATION_H
 
 
-#include <SoftwareSerial.h>
+#include <Arduino.h>
 
-class Communication : protected SoftwareSerial {
+class Communication {
 protected:
-    int rxPin;
-    int txPin;
+
+    HardwareSerial serial;
+    long speed;
 public:
-    Communication(int _rxPin, int _txPin);
-    void begin(long speed);
+    Communication(const HardwareSerial&, long);
+    void begin();
+
+
+    template<typename T>
+    void send(T value);
+
+
+    int received();
+    char readChar();
+    String readString();
 };
 
 
