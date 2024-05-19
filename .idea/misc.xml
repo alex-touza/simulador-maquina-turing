@@ -15,6 +15,7 @@
     </libraryRoots>
     <excludeRoots>
       <file path="$PROJECT_DIR$/.pio" />
+      <file path="$PROJECT_DIR$/dist" />
     </excludeRoots>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
@@ -31,4 +32,7 @@
     </option>
   </component>
   <component name="PlatformIOWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
+  <component name="PythonCompatibilityInspectionAdvertiser">
+    <option name="version" value="3" />
+  </component>
 </project>
