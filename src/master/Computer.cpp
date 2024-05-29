@@ -80,59 +80,72 @@ int Program<n>::countStates() {
 }
 
 template<int n>
-bool Program<n>::encode(bool* buffer, int bufferSize) {
+int Program<n>::encode(bool* buffer, int bufferSize) {
+    bool* start = buffer;
+
     int count = 0;
-    int idCount = 1; // 0 és halt
+    int idCount = 1;
+
+    int bitCount = 0;
 
 
+    for (int i = 0; i < n; ++i) {
+        State* s = this->states[i];
 
-    for (State* s : this->states) {
-        if ((count + 1) * stateSize > bufferSize) return false;
         if (!s) break;
+        if ((count + 1) * stateSize > bufferSize) return -1;
 
-        s->id = idCount++; // retornar id i després sumar
+        if (s->id == -1)
+            s->id = idCount++; // retornar id i després sumar
 
-        for (int i = 0; i < 3; ++i) {
-            const Instruction* ins = (*s)[i];
+        for (int j = 0; j < 3; ++j) {
+            const Instruction* ins = (*s)[j];
 
             *(buffer++) = ins->write;
             *(buffer++) = directionToBool(ins->dir);
 
+
             if (ins->nextState) {
+                if (ins->nextState->id == -1)
+                    ins->nextState->id = idCount++;
 
                 int nextId = ins->nextState->id;
 
                 int pow = 1; // valor del bit més significatiu
-                for (int j = 1; j < STATE_ADDRESS_SIZE; ++j) {
+                for (int k = 1; k < STATE_ADDRESS_SIZE; ++k) {
                     pow *= 2;
                 }
 
                 // iterar des de més significatiu a menys
                 int ind = 0;
-                for (int j = STATE_ADDRESS_SIZE - 1; j >= 0; --j) {
+                for (int k = STATE_ADDRESS_SIZE - 1; k >= 0; --k) {
                     buffer[ind] = nextId >= pow;
                     if (nextId >= pow)
                         nextId -= pow;
 
                     pow /= 2;
+
+                    ++ind;
                 }
 
                 if (nextId != 0) {
                     Serial.println("Program encode overflow!");
-                    return false;
+                    return -1;
                 }
 
                 buffer += STATE_ADDRESS_SIZE;
             } else {
-                for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
                     *(buffer++) = false;
                 }
             }
 
-
         }
+        bitCount += 15;
 
         ++count;
     }
+    return bitCount;
 
 }
+

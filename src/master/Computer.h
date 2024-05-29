@@ -48,7 +48,7 @@ namespace Computer {
 
         int countStates(); // comptar els que no són nullptr
 
-        bool encode(bool*, int);
+        int encode(bool*, int);
 
         explicit Program(State*[n]);
     };
