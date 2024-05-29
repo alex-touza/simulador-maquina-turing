@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import fileinput
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from glob import glob
 from os import mkdir, makedirs, rename
@@ -6,12 +9,14 @@ from os.path import abspath, join, relpath, isdir
 from shutil import copy2, rmtree
 
 from text import Estils, Colors
+from actions import FormatAction
 
 
 @dataclass
 class FileType:
     name: str
     extension: str
+
 
 
 class Environment:
@@ -39,10 +44,10 @@ class Environment:
             if not v: continue
             value = f"{v:>40}"
             key = f"{k:<30}"
-            print(f'{key} {value}')
+            print(f'{key} {Estils.brillant(value)}')
 
         for name, files in self.files.items():
-            print(f"{len(files)} {name}")
+            print(Estils.brillant(f"{len(files)} {name}"))
             for f in files:
                 print(f"\t{relpath(f, self.root)}")
 
@@ -65,14 +70,14 @@ class Environment:
         makedirs(self.destination_path)
 
         for i, f in enumerate(files, 1):
-            print(f"Copying file {i} of {len(files)}...")
+            print(f"Copying file {i} of {len(files)}: {f}")
             copy2(f, self.destination_path)
 
         print(Colors.verd("Files copied successfully."))
         print()
 
 
-    def format(self):
+    def format(self, actions: list[FormatAction]):
         print(Colors.blau(f"Formatting enviornment {Estils.brillant(self.name)}..."))
 
         print(f"Renaming main file")
@@ -80,11 +85,15 @@ class Environment:
 
         print("Fixing include directives...")
         for path in glob(f"{self.destination_path}/*"):
-            content = []
-            with open(path, 'r') as file:
-                content = file.readlines()
+            with fileinput.input(path, inplace=True) as file:
+                for line in file:
+                    new_line = line
+                    for action in actions:
+                        new_line = action(new_line)
 
-            for line in content[:]:
-                if line.startswith("#include"):
+                    print(new_line, end='')
+
+
+        print()
 
 

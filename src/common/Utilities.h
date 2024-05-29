@@ -4,7 +4,7 @@
 
 #ifndef SIMULADOR_MAQUINA_TURING_UTILITIES_H
 #define SIMULADOR_MAQUINA_TURING_UTILITIES_H
-template <typename T, typename U = T>
+template <typename T, typename U>
 struct Pair {
     T first;
     U second;

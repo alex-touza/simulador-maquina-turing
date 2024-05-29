@@ -1,209 +1,73 @@
 #include <Arduino.h>
+#include "common/Communication.h"
+#include "Tape.h"
+#include "common/pins/EntradaDigital.h"
 
-constexpr int TAPE_LENGTH = 64;
-constexpr int VIEW_LENGTH = 16;
+using CDPins::EntradaDigital;
+Computer::Tape tape;
 
-class LEDArray {
-public:
-    LEDArray(int _pinStart, int _pinEnd) {
-        this->pinStart = _pinStart;
-        this->pinEnd = _pinEnd;
-    };
+Communication communication(nullptr, 38400);
 
-    void begin() const {
-        for (int i = pinStart; i <= pinEnd; ++i) {
-            pinMode(i, OUTPUT);
-        }
-    }
+constexpr int nButtons = 6;
+int buttonsPins[nButtons] = {10, 11, 12, 13, 14, 15};
 
-    void set(int i, bool on) const {
-        digitalWrite(pinStart + i, on);
-    }
-
-    void setAll(bool on) const {
-        for (int i = pinStart; i <= pinEnd; ++i) {
-            digitalWrite(i, on);
-        }
-    }
-
-    int pinStart;
-    int pinEnd;
-};
-
-class Tape {
-public:
-    enum Cell : int {
-        BLANK = -1,
-        ZERO = 0,
-        ONE = 1,
-    };
-
-    enum Direction : int {
-        LEFT,
-        RIGHT
-    };
-
-    static char encode(Tape::Cell c) {
-        switch (c) {
-            case Tape::BLANK:
-                return 'b';
-            case Tape::ZERO:
-                return '0';
-            case Tape::ONE:
-                return '1';
-        }
-    }
-
-    static char encode(Tape::Direction c) {
-        switch (c) {
-            case Tape::LEFT:
-                return 'l';
-            case Tape::RIGHT:
-                return 'r';
-        }
-    }
-
-    Tape() {
-        for (Cell& c : buffer) {
-            c = BLANK;
-        }
-    }
-
-    void begin() {
-        blanks.begin();
-        state.begin();
-
-        blanks.setAll(true);
-        state.setAll(false);
-    }
-
-    void test() {
-        blanks.setAll(true);
-        state.setAll(true);
-        delay(1500);
-        state.setAll(false);
-    }
-
-    void write(Cell c) {
-        Serial.println("Write " + String(Tape::encode(c)) + " to pos " + String(head));
-        buffer[head] = c;
-        update(head, VIEW_LENGTH / 2 - 1);
-    }
-
-    void update() {
-        Serial.println("Visible tape");
-
-        int j = 0;
-        for (int i = head - 7; i < head + 8; ++i) {
-            update(i, j);
-            Serial.print(Tape::encode(buffer[i]));
-            ++j;
-        }
-
-        Serial.println("\nTape");
-        for (auto c : buffer) Serial.print(Tape::encode(c));
-        Serial.println();
-    }
-
-    void update(int bufferInd, int ledInd) {
-        Serial.println("Set led #" + String(ledInd) + " from pos " + String(bufferInd));
-        Cell& c = buffer[bufferInd];
-
-        state.set(ledInd, c == ONE);
-        blanks.set(ledInd, c == BLANK);
-
-
-    }
-
-    bool move(Direction d) {
-        if (d == LEFT) {
-            if (head == VIEW_LENGTH / 2 - 1) return false;
-
-            --head;
-        } else {
-            if (head == TAPE_LENGTH - VIEW_LENGTH / 2 - 1) return false;
-
-            ++head;
-        }
-
-        Serial.println("Head pos " + String(head));
-
-        update();
-        return true;
-    }
-
-    Cell& read() {
-        return buffer[head];
-    }
-
-    int head = 7;
-
-private:
-    LEDArray blanks{22, 37};
-    LEDArray state{38, 52};
-
-    Cell buffer[TAPE_LENGTH]{};
-};
-
-
-Tape tape;
+EntradaDigital* buttons[nButtons];
 
 void setup() {
     tape.begin();
 
+    int* pinPtr = buttonsPins;
+    for (auto& button : buttons) {
+        button = new EntradaDigital(*pinPtr);
+        button->begin();
 
-    // Open serial communications and wait for port to open:
+        ++pinPtr;
+    }
+
+
     Serial.begin(115200);
 
-    Serial1.begin(38400);
+    communication.serial = &Serial1;
+
+    communication.begin();
 }
 
-/*
- * errors:
- *  - ei: invalid character
- *  - er: out of range
- *
- */
 void loop() {
 
-    if (Serial1.available()) {
-        char c = static_cast<char>(Serial1.read());
+    if (communication.received()) {
+        Codes code = communication.readCode();
 
-        Serial.println("Read char " + String(c));
+        Serial.println("Read instruction " + getCode(code));
 
-        if (c == 'l' || c == 'r') {
+        if (code == Codes::LEFT || code == Codes::RIGHT) {
             Serial.println("Direction");
-            Tape::Direction d = c == 'r' ? Tape::Direction::RIGHT : Tape::Direction::LEFT;
+            auto d = static_cast<Computer::Direction>(static_cast<int>(code));
 
             if (!tape.move(d)) {
-                Serial1.write("er");
+                communication.sendCode(Codes::ERROR_INVALID_CHARACTER);
             }
-        } else if (c == 'q') {
-            Serial.println("Query");
-            String s = "c" + String(Tape::encode(tape.read()));
-            Serial1.write(s.c_str()); // ??
-        } else if (c == 'w') {
-            Serial.println("Write");
-            char m = static_cast<char>(Serial1.read());
 
-            switch (m) {
-                case '0':
-                    tape.write(Tape::ZERO);
-                    break;
-                case '1':
-                    tape.write(Tape::ONE);
-                    break;
-                case 'b':
-                    tape.write(Tape::BLANK);
-                    break;
-                default:
-                    Serial1.write("ei");
-                    Serial.println("");
-            }
+        } else if (code == Codes::QUERY) {
+            Serial.println("Query");
+
+            // woah
+            communication.sendCode(static_cast<Codes>(static_cast<int>(tape.read())));
+
+        } else if (code == Codes::WRITE) {
+            Serial.println("Write");
+            Codes cell = communication.readCode();
+
+            // woah woah
+            tape.write(static_cast<Computer::Cell>(static_cast<int>(cell)));
+        }
+    } else if (true) {
+        Serial.println("Buttons");
+
+        for (const auto& button : buttons) {
+            Serial.print(button->read(true));
         }
 
-
-        Serial1.write(10);
+        Serial.println();
     }
 
 }

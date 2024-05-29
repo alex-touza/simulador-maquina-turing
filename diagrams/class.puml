@@ -1,0 +1,71 @@
+@startuml
+'https://plantuml.com/class-diagram
+hide members
+set separator ::
+
+
+class Communication {
+	+ Communication(HardwareSerial*, long)
+    + void begin()
+    + void sendChar(char)
+    + void sendCode(Codes)
+    + char readChar()
+    + Codes readCode()
+    + String readString()
+    + int received()
+    # long speed
+    # HardwareSerial* serial
+
+}
+
+enum Codes
+
+struct LEDArray
+
+namespace Computer {
+	class Program<int n> {
+		# State* states[n]
+		+ Program(State*[n])
+		+ void compute(Communication&)
+	}
+
+	enum Cell
+
+    enum Direction
+
+    struct Instruction
+
+    struct State
+
+	class Tape {
+		+ Tape()
+		+ {static} char encode(Cell)
+		+ {static} char encode(Direction)
+		+ void update()
+        + void update(int, int)
+        + bool move(Direction)
+        + Cell& read()
+        + int head
+        - LEDArray blanks
+        - LEDArray ones
+        - Cell buffer[TAPE_LENGTH]
+
+    }
+
+	Direction --* Instruction
+	Cell --* Instruction
+	Instruction --* State
+	State ..> Instruction
+	State ..> Program
+	Communication ..> Program
+	Cell --* Tape
+	LEDArray --* Tape
+
+	show Program members
+	show Tape members
+
+}
+
+show Communication members
+
+@enduml
