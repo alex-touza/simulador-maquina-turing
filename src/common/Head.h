@@ -41,6 +41,8 @@ namespace Computer {
                 return '0';
             case Cell::ONE:
                 return '1';
+            default:
+                return 'X';
         }
     }
 

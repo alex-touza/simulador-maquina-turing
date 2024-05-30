@@ -87,8 +87,6 @@ void Program::compute(Communication& communication) {
 }
 
 int Program::encode(bool* buffer, int bufferSize) {
-    bool* start = buffer;
-
     int count = 0;
     int idCount = 1;
 

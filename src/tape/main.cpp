@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include "common/Communication.h"
 #include "Tape.h"
-#include "common/pins/EntradaDigital.h"
+#include "common/pins/DigitalIn.h"
 
-using CDPins::EntradaDigital;
+using TMPins::DigitalIn;
 Computer::Tape tape;
 
 Communication communication(nullptr, 38400);
@@ -11,14 +11,14 @@ Communication communication(nullptr, 38400);
 constexpr int nButtons = 6;
 int buttonsPins[nButtons] = {10, 11, 12, 13, 14, 15};
 
-EntradaDigital* buttons[nButtons];
+DigitalIn* buttons[nButtons];
 
 void setup() {
     tape.begin();
 
     int* pinPtr = buttonsPins;
     for (auto& button : buttons) {
-        button = new EntradaDigital(*pinPtr);
+        button = new DigitalIn(*pinPtr);
         button->begin();
 
         ++pinPtr;

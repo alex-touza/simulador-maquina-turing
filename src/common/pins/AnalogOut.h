@@ -4,16 +4,22 @@
 #include <Arduino.h>
 #include "Pin.h"
 
-namespace CDPins {
-    class SortidaAnalogica : public Pin {
+#define ANALOG_WRITE_MAX 255
+
+namespace TMPins {
+    class AnalogOut : public OutputPin {
     public:
-        using Pin::Pin;
+        using OutputPin::OutputPin;
 
         void begin() override;
 
-        void set(unsigned int _value);
+        void set(unsigned int _value) override;
 
         void set(int _value, int min, int max);
+
+        void on() override;
+
+        void off() override;
     };
 }
 

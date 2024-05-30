@@ -4,16 +4,16 @@
 #include <Arduino.h>
 #include "Pin.h"
 
-namespace CDPins {
-    class SortidaDigital : public Pin {
+namespace TMPins {
+    class DigitalOut : public OutputPin {
     public:
-        using Pin::Pin;
+        using OutputPin::OutputPin;
 
         void begin() override;
 
-        void on();
+        void on() override;
 
-        void off();
+        void off() override;
 
         /*
         Encendre la sortida durant un temps determinat.
@@ -29,7 +29,7 @@ namespace CDPins {
         Assignar la sortida a un valor.
         Valors de tipus bool són convertits a int.
         */
-        void set(unsigned int estat);
+        void set(unsigned int estat) override;
 
         /*
         Assignar la sortida a un valor durant un temps determinat.

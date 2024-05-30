@@ -8,14 +8,14 @@
 #include "Arduino.h"
 #include "Pin.h"
 
-namespace CDPins {
-    class EntradaAnalogica : public Pin {
+namespace TMPins {
+    class AnalogIn : public InputPin {
     public:
-        using Pin::Pin;
+        using InputPin::InputPin;
 
         void begin() override;
 
-        unsigned int read();
+        unsigned int read() override;
     };
 }
 

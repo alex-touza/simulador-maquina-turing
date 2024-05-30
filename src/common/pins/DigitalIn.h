@@ -10,21 +10,23 @@ enum InterruptModes {
 };
 */
 
-namespace CDPins {
-    class EntradaDigital : public Pin {
+namespace TMPins {
+    class DigitalIn : public InputPin {
     public:
-        using Pin::Pin;
+        using InputPin::InputPin;
 
         void begin() override;
         bool active;
 
-        unsigned int read(bool debounce = false, bool invert = false);
+        unsigned int read() override;
+
+        unsigned int read(bool debounce /* = false */, bool invert = false);
 
         /*
         Equivalent a la funció integrada corresponent amb un
         interval de 10 microsegons.
         */
-        unsigned long pulseIn();
+        unsigned long pulseIn(bool state = HIGH);
 
         /*
         void attachInterrupt(InterruptModes mode, void (*callback)());

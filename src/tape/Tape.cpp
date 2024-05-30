@@ -20,8 +20,8 @@ void Tape::begin() {
     blanks.begin();
     ones.begin();
 
-    blanks.setAll(true);
-    ones.setAll(false);
+    blanks.on();
+    ones.off();
 }
 
 void Tape::write(Cell c) {
@@ -49,8 +49,8 @@ void Tape::update(int bufferInd, int ledInd) {
     Serial.println("Set led #" + String(ledInd) + " from pos " + String(bufferInd));
     Cell& c = this->buffer[bufferInd];
 
-    this->ones.set(ledInd, c == ONE);
-    this->blanks.set(ledInd, c == BLANK);
+    this->ones.set(c == ONE, ledInd);
+    this->blanks.set(c == BLANK, ledInd);
 
 
 }

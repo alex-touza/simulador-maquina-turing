@@ -1,13 +1,13 @@
-#include "EntradaDigital.h"
+#include "DigitalIn.h"
 #include "Arduino.h"
 
 
-void CDPins::EntradaDigital::begin() {
+void TMPins::DigitalIn::begin() {
     pinMode(this->pin, INPUT);
     this->active = false;
 }
 
-unsigned int CDPins::EntradaDigital::read(bool debounce, bool invert) {
+unsigned int TMPins::DigitalIn::read(bool debounce, bool invert) {
 
     unsigned int _value = digitalRead(this->pin);
     if (invert) _value = !_value;
@@ -27,9 +27,13 @@ unsigned int CDPins::EntradaDigital::read(bool debounce, bool invert) {
     return this->value = _value;
 }
 
-unsigned long CDPins::EntradaDigital::pulseIn() {
+unsigned long TMPins::DigitalIn::pulseIn(bool state) {
     this->value = 0;
-    return ::pulseIn(this->pin, HIGH);
+    return ::pulseIn(this->pin, state);
+}
+
+unsigned int TMPins::DigitalIn::read() {
+    return this->read(false, false);
 }
 
 /*
