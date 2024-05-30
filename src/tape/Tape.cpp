@@ -7,25 +7,8 @@
 
 using namespace Computer;
 
-char Tape::encode(Cell c) {
-    switch (c) {
-        case Cell::BLANK:
-            return 'b';
-        case Cell::ZERO:
-            return '0';
-        case Cell::ONE:
-            return '1';
-    }
-}
 
-char Tape::encode(Direction c) {
-    switch (c) {
-        case Direction::LEFT:
-            return 'l';
-        case Direction::RIGHT:
-            return 'r';
-    }
-}
+
 
 Tape::Tape() {
     for (Cell& c : buffer) {
@@ -42,7 +25,7 @@ void Tape::begin() {
 }
 
 void Tape::write(Cell c) {
-    Serial.println("Write " + String(Tape::encode(c)) + " to pos " + String(head));
+    Serial.println("Write " + String(cellToChar(c)) + " to pos " + String(head));
     buffer[head] = c;
     update(head, VIEW_LENGTH / 2);
 }
@@ -53,42 +36,42 @@ void Tape::update() {
     int j = 0;
     for (int i = head - VIEW_LENGTH / 2; i < head + VIEW_LENGTH / 2 + 1; ++i) {
         update(i, j);
-        Serial.print(Tape::encode(buffer[i]));
+        Serial.print(cellToChar(buffer[i]));
         ++j;
     }
 
     Serial.println("\nTape");
-    for (auto c : buffer) Serial.print(Tape::encode(c));
+    for (auto c : buffer) Serial.print(cellToChar(c));
     Serial.println();
 }
 
 void Tape::update(int bufferInd, int ledInd) {
     Serial.println("Set led #" + String(ledInd) + " from pos " + String(bufferInd));
-    Cell& c = buffer[bufferInd];
+    Cell& c = this->buffer[bufferInd];
 
-    ones.set(ledInd, c == ONE);
-    blanks.set(ledInd, c == BLANK);
+    this->ones.set(ledInd, c == ONE);
+    this->blanks.set(ledInd, c == BLANK);
 
 
 }
 
 bool Tape::move(Direction d) {
     if (d == LEFT) {
-        if (head == VIEW_LENGTH / 2) return false;
+        if (this->head == VIEW_LENGTH / 2) return false;
 
-        --head;
+        --this->head;
     } else {
-        if (head == TAPE_LENGTH - VIEW_LENGTH / 2 - 1) return false;
+        if (this->head == TAPE_LENGTH - VIEW_LENGTH / 2 - 1) return false;
 
-        ++head;
+        ++this->head;
     }
 
-    Serial.println("Head pos " + String(head));
+    Serial.println("Head pos " + String(this->head));
 
     update();
     return true;
 }
 
 Cell& Tape::read() {
-    return buffer[head];
+    return buffer[this->head];
 }

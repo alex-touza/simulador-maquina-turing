@@ -1,0 +1,15 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+
+start
+
+repeat
+	:Obtenir punter a estat;
+	backward:Executar estat;
+	repeat while (punter és nullptr?) is (no)
+	->sí;
+
+end
+
+
+@enduml

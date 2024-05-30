@@ -6,10 +6,11 @@
 #define SIMULADOR_MAQUINA_TURING_COMPUTER_H
 
 
-#include "common/Machine.h"
+#include "common/Head.h"
 #include "common/Communication.h"
 
 #define STATE_ADDRESS_SIZE 3
+#define DECODE_STATE_SIZE 10
 
 constexpr int stateSize = (2 + STATE_ADDRESS_SIZE) * 3;
 
@@ -18,45 +19,58 @@ namespace Computer {
 
 
     struct Instruction {
-
         bool write;
         Direction dir;
         State* nextState; // pot ser nullptr
+    };
 
-        Instruction(Direction dir, State* nextState, bool write);
+    struct PartialInstruction : Instruction {
+        int nextStateId;
     };
 
     struct State {
         int id = -1; // assignat durant la codificació
-        Instruction ifZero;
-        Instruction ifOne;
-        Instruction ifBlank;
+        Instruction ifZero = {ZERO, RIGHT, nullptr};
+        Instruction ifOne = {ONE, RIGHT, nullptr};
+        Instruction ifBlank = {ZERO, RIGHT, nullptr};
 
-        const Instruction* operator[](int) const;
+        State* operator()(Communication& communication);
 
-        State* operator()(Communication&); // pot retornar nullptr
+        virtual Instruction* operator[](int);
+
         State(const Instruction& ifZero, const Instruction& ifOne, const Instruction& ifBlank);
+
+        State() = default;
     };
 
-    template<int n>
+    struct PartialState : State {
+        PartialInstruction ifZeroPartial;
+        PartialInstruction ifOnePartial;
+        PartialInstruction ifBlankPartial;
+
+        PartialState(
+                const PartialInstruction& ifZeroPartial, const PartialInstruction& ifOnePartial,
+                const PartialInstruction& ifBlankPartial);
+
+        PartialInstruction* operator[](int) override;
+
+    };
+
     class Program {
     protected:
-        State* states[n]; // array de punters perquè es pugui posar nullptr als llocs buits
+        State** states; // array de punters perquè es pugui posar nullptr als llocs buits
+        int n;
 
     public:
-        void compute(Communication&);
+        Program(State**, int);
 
-        int countStates(); // comptar els que no són nullptr
+        void compute(Communication&);
 
         int encode(bool*, int);
 
-        explicit Program(State*[n]);
+        static Program decode(bool*, int);
+
     };
-
-
-
-    template
-    class Program<10>;
 
 
 } // Machine

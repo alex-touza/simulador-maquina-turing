@@ -6,7 +6,40 @@
 
 using namespace Computer;
 
-Instruction::Instruction(Direction dir, State* nextState, bool write) : write(write), dir(dir), nextState(nextState) {}
+Instruction* State::operator[](int ind) {
+    switch (ind) {
+        case 0:
+            return &this->ifZero;
+        case 1:
+            return &this->ifOne;
+        case 2:
+            return &this->ifBlank;
+        default:
+            return nullptr;
+
+    }
+}
+
+PartialState::PartialState(
+        const PartialInstruction& ifZeroPartial, const PartialInstruction& ifOnePartial,
+        const PartialInstruction& ifBlankPartial) :
+        ifZeroPartial(ifZeroPartial),
+        ifOnePartial(ifOnePartial),
+        ifBlankPartial(ifBlankPartial) {}
+
+PartialInstruction* PartialState::operator[](int ind) {
+    switch (ind) {
+        case 0:
+            return &this->ifZeroPartial;
+        case 1:
+            return &this->ifOnePartial;
+        case 2:
+            return &this->ifBlankPartial;
+        default:
+            return nullptr;
+
+    }
+}
 
 State* State::operator()(Communication& communication) {
     communication.sendCode(Codes::QUERY);
@@ -33,10 +66,10 @@ State* State::operator()(Communication& communication) {
     }
 
     communication.sendCode(static_cast<Codes>(static_cast<int>(instruction->write)));
-    delay(100);
+    delay(200);
 
     communication.sendCode(static_cast<Codes>(static_cast<int>(instruction->dir)));
-    delay(100);
+    delay(200);
 
     return instruction->nextState;
 }
@@ -45,42 +78,15 @@ State::State(const Instruction& ifZero, const Instruction& ifOne, const Instruct
                                                                                                 ifOne(ifOne),
                                                                                                 ifBlank(ifBlank) {}
 
-const Instruction* State::operator[](int ind) const {
-    switch (ind) {
-        case 0:
-            return &this->ifZero;
-        case 1:
-            return &this->ifOne;
-        case 2:
-            return &this->ifBlank;
-        default:
-            return nullptr;
 
-    }
-}
+Program::Program(State** _states, int _n) : states(_states), n(_n) {}
 
-template<int n>
-Program<n>::Program(State* _states[n]) : states(_states) {}
-
-template<int n>
-void Program<n>::compute(Communication& communication) {
+void Program::compute(Communication& communication) {
     State* currentState = *this->states;
     while ((currentState = (*currentState)(communication)));
 }
 
-template<int n>
-int Program<n>::countStates() {
-    int count = 0;
-    for (State* s : this->states) {
-        if (!s) break;
-
-        ++count;
-    }
-    return count;
-}
-
-template<int n>
-int Program<n>::encode(bool* buffer, int bufferSize) {
+int Program::encode(bool* buffer, int bufferSize) {
     bool* start = buffer;
 
     int count = 0;
@@ -149,3 +155,85 @@ int Program<n>::encode(bool* buffer, int bufferSize) {
 
 }
 
+Program Program::decode(bool* buffer, int bufferSize) {
+    PartialState* partialStates[DECODE_STATE_SIZE];
+
+    PartialState** partialStateBuffer = partialStates;
+
+    int id = 1;
+
+    int statesCount = 0;
+
+    for (int i = 0; i < bufferSize; ++i) {
+        PartialInstruction* instructions[3];
+        for (auto& instruction : instructions) {
+            instruction = new PartialInstruction;
+            instruction->write = *(buffer++);
+            instruction->dir = boolToDirection(*(buffer++));
+
+            instruction->nextStateId = 0;
+            int pow = 1;
+            for (int j = STATE_ADDRESS_SIZE-1; j >= 0; --j) {
+                instruction->nextStateId += pow * buffer[j];
+                pow *= 2;
+            }
+
+
+            buffer += STATE_ADDRESS_SIZE;
+        }
+
+        auto* thisState = new PartialState(*instructions[0], *instructions[1], *instructions[2]);
+        thisState->id = id++;
+
+        *partialStateBuffer = thisState;
+
+        ++statesCount;
+        ++partialStateBuffer;
+        i += stateSize;
+    }
+
+    for (int i = statesCount; i < DECODE_STATE_SIZE; ++i) {
+        partialStates[i] = nullptr;
+    }
+
+    auto** states = new State* [statesCount];
+
+
+    // copiar partialStates a states
+    auto** stateBuffer = states;
+    for (PartialState* statePtr : partialStates) {
+        if (!statePtr) break;
+
+        *stateBuffer = new State;
+        (*stateBuffer)->ifZero = static_cast<Instruction>(statePtr->ifZeroPartial);
+        (*stateBuffer)->ifOne = static_cast<Instruction>(statePtr->ifOnePartial);
+        (*stateBuffer)->ifBlank = static_cast<Instruction>(statePtr->ifBlankPartial);
+        (*stateBuffer)->id = statePtr->id;
+
+        ++stateBuffer;
+    }
+
+    // assignar els ids a states a partir de partialStates
+    int i = 0;
+    for (PartialState* statePtr : partialStates) {
+        if (!statePtr) break;
+        for (int j = 0; j < 3; ++j) {
+            PartialInstruction* ptrIns = (*statePtr)[j];
+            const int& nextStateId = ptrIns->nextStateId;
+            if (nextStateId == 0)
+                ptrIns->nextState = nullptr;
+            else
+                for (int k = 0; k < STATE_ADDRESS_SIZE; ++k)
+                    if (states[k]->id == nextStateId) {
+                        (*states[i])[j]->nextState = states[k];
+                        break;
+                    }
+
+
+        }
+
+        ++i;
+
+    }
+    return {states, DECODE_STATE_SIZE};
+}

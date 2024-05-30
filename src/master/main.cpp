@@ -15,7 +15,7 @@ State A({
 
 State* state[10] = {&A, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
-Program<10> programA(state);
+Program programA(state, 10);
 
 
 Communication communication(nullptr, 38400);

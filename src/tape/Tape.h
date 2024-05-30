@@ -6,7 +6,7 @@
 #define SIMULADOR_MAQUINA_TURING_TAPE_H
 
 #include "LEDArray.h"
-#include "common/Machine.h"
+#include "common/Head.h"
 
 #define TAPE_LENGTH 128
 #define VIEW_LENGTH 15
@@ -15,10 +15,6 @@ namespace Computer {
 
     class Tape {
     public:
-        static char encode(Cell);
-
-        static char encode(Direction);
-
         Tape();
 
         void begin();
