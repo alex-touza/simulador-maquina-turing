@@ -21,11 +21,11 @@ Instruction* State::operator[](int ind) {
 }
 
 PartialState::PartialState(
-        const PartialInstruction& ifZeroPartial, const PartialInstruction& ifOnePartial,
-        const PartialInstruction& ifBlankPartial) :
-        ifZeroPartial(ifZeroPartial),
-        ifOnePartial(ifOnePartial),
-        ifBlankPartial(ifBlankPartial) {}
+        const PartialInstruction& _ifZeroPartial, const PartialInstruction& _ifOnePartial,
+        const PartialInstruction& _ifBlankPartial) :
+        ifZeroPartial(_ifZeroPartial),
+        ifOnePartial(_ifOnePartial),
+        ifBlankPartial(_ifBlankPartial) {}
 
 PartialInstruction* PartialState::operator[](int ind) {
     switch (ind) {
