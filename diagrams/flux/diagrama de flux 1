@@ -1,0 +1,30 @@
+@startuml
+repeat
+ :Encendre pantalla;
+ ->
+ :Encendre LEDs;
+ ->
+ :Encendre sensor de color;
+ ->
+ if (Botó 1 premut?) then (NO);
+  :Rodes = OFF;
+ else (SI)
+  :Rodes = ON;
+  if (Altre botó premut?) then (NO);
+   if (Sensor detecta?) then (SÍ);
+    :Executar programa amb LEDs;
+    :Mostrar a la pantalla;
+   else (NO)
+    :Error;
+   endif
+  else (SÍ)
+   :mostrar programa a la pantalla;
+   if (sensor detecta algo?) then (NO);
+    :Encendre servo;
+    :Dibuixar programa;
+   else (SÍ)
+    :Error;
+   endif
+ endif
+
+@enduml
